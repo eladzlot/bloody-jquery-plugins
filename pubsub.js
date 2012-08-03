@@ -13,6 +13,7 @@
 
 	// the topic/subscription hash
 	var cache = {};
+	var counters ={};
 
 	d.publish = function(/* String */topic, /* Array? */args){
 		// summary: 
@@ -28,11 +29,12 @@
 		//		with a function signature like: function(a,b,c){ ... }
 		//
 		//	|		$.publish("/some/topic", ["a","b","c"]);
-		if(cache[topic]){
-			for(var i = 0; i < cache[topic].length; i++){
-				cache[topic][i].apply(d, args || []);
-			}
-		}
+		// log(topic,args);
+		
+		cache[topic] && d.each(cache[topic], function(){
+			this.apply(d, args || []);
+		});
+		
 	};
 
 	d.subscribe = function(/* String */topic, /* Function */callback){
@@ -52,9 +54,10 @@
 		//	|	$.subscribe("/some/topic", function(a, b, c){ /* handle data */ });
 		//
 		if(!cache[topic]){
-			cache[topic] = [];
+			cache[topic] = {};
+			counters[topic] = 0;
 		}
-		cache[topic].push(callback);
+		cache[topic][counters[topic]++] = callback;
 		return [topic, callback]; // Array
 	};
 
@@ -69,9 +72,7 @@
 		
 		var t = handle[0];
 		cache[t] && d.each(cache[t], function(idx){
-			if(this == handle[1]){
-				cache[t].splice(idx, 1);
-			}
+			this == handle[1] && delete(cache[t][idx]);
 		});
 	};
 
